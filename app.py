@@ -17,7 +17,7 @@ CORS(app)
 app.secret_key = 'secret'
 
 app.config['MONGO_DBNAME'] = 'users'
-app.config['MONGO_URI'] = 'mongodb+srv://abhi:VMzXuQzKFm8rcJ5@votechain-user-node.toapt.mongodb.net/users?retryWrites=true&w=majority'
+app.config['MONGO_URI'] = os.environ.get('mongoURI')
 mongo = PyMongo(app)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///sdb.sqlite3'
@@ -29,7 +29,6 @@ app.config['SESSION_SQLALCHEMY'] = sdb
 
 sess = Session(app)
 
-app.config['UPLOAD_FOLDER'] = 'candidateIMG' 
 
 
 @app.route('/')
@@ -56,7 +55,7 @@ def register():
             # users.insert({'name' : request.form['userName'], 'email': request.form['email'], 'pKey':request.form['pKey'] , 'password' : hashpass})
             session.permanent = True
             app.permanent_session_lifetime = timedelta(minutes=15)
-            session['otp'] = SendOtp(request.form['email'])
+            session['otp'] = SendOtp(request.form['email'],'Verify')
             session['name'] = request.form['userName']
             session['email'] = request.form['email']
             session['pKey'] = request.form['pKey']
@@ -110,6 +109,14 @@ def login():
                 return 'pass invalid'
         else:
             return "invalid"
+
+
+@app.route('forgotPass',methods=['GET','POST'])
+def forgotPass():
+    if request.method == 'GET':
+        return render_template('forgotpass-new.html')
+    elif request.method == 'POST':
+        
 
 
 @app.route('/new-poll',methods=['GET','POST'])

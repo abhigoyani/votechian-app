@@ -23,17 +23,14 @@ def otpgen():
     return otp
 
 
-def SendOtp(mail):
+def SendOtp(mail,from):
     otp=otpgen()
     requests.post(
-        "https://api.eu.mailgun.net/v3/votechain.biz/messages",
+        "https://api.eu.mailgun.net/v3/account.vote-chain.tech/messages",
         auth=("api", os.environ.get('mailGunAPI')),
-        data={"from": "VoteChain verification <otp@votechain.biz>",
+        data={"from": "VoteChain verification <{}@account.vote-chain.tech>".format(from),
               "to": [mail],
               "subject": "Account verification | VoteChain",
-              "template": "votechain",
+              "template": "otpsend",
               "v:otp":otp})
     return otp
-
-
-print(os.environ.get('mailGunAPI'))
