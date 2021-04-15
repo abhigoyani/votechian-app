@@ -8,6 +8,8 @@ import bcrypt
 from flask_sqlalchemy import SQLAlchemy
 from flask_session import Session
 from datetime import timedelta
+
+import requests
 from util import verfiyKey,SendOtp
 import os
 
@@ -47,7 +49,7 @@ def register():
     if request.method == 'POST':
         users = mongo.db.users
 
-        existing_user = users.find_one({'email':request.form['email']})
+        existing_user = users.find_one({'_id':request.form['email']})
         if existing_user is None:
             if not verfiyKey(request.form['pKey']):
                 return 'invalid key'
@@ -96,7 +98,7 @@ def login():
         return render_template('login.html')
     elif request.method == 'POST':
         users = mongo.db.users
-        login_user = users.find_one({'email' : request.form['email']})
+        login_user = users.find_one({'_id' : request.form['email']})
         if login_user:
             passVerif = bcrypt.checkpw(request.form['pass'].encode("utf-8"), login_user['password'])
             # print(request.form['pass'] + ' from dbb] '+ login_user['password'])
@@ -111,11 +113,30 @@ def login():
             return "invalid"
 
 
-@app.route('forgotPass',methods=['GET','POST'])
+@app.route('/forgotPass',methods=['GET','POST'])
 def forgotPass():
     if request.method == 'GET':
         return render_template('forgotpass-new.html')
     elif request.method == 'POST':
+        if 'email' in request.form:
+            users = mongo.db.users
+            existing_user = users.find_one({'_id':request.form['email']})
+            if existing_user :
+                session['resetotp'] = SendOtp(request.form['email'],'Reset')
+                session['forgotemail'] = request.form['email']
+                return render_template('reset-otp.html')
+            else:
+                return render_template('user-not-exist.html')
+        if  request.form['resetotp']:
+            if session['resetotp'] == request.form['resetotp']:
+                users = mongo.db.users
+                if users.update_one({'_id':session['forgotemail']},{"$set": { 'password': bcrypt.hashpw(request.form['newpass'].encode("utf-8"), salt=bcrypt.gensalt())}}) :
+                    return 'pass updated'
+                else:
+                    return 'somthing went wrong'
+            else:
+                return render_template('reset-pass-wrong-otp.html')
+
         
 
 
